@@ -1,3 +1,5 @@
+# _*_ coding:utf8 _*_
+
 import numpy as np
 import tensorflow as tf
 from utils.general_utils import test_all_close
@@ -24,10 +26,14 @@ def softmax(x):
     """
 
     ### YOUR CODE HERE
+    # 减去每一行最大值,作归一化
     x_max = tf.reduce_max(x,1,keep_dims=True)          # find row-wise maximums
     x_sub = tf.subtract(x,x_max)                       # subtract maximums
+    # 计算每个元素的指数
     x_exp = tf.exp(x_sub)                              # exponentiation
+    # 每一行的和
     sum_exp = tf.reduce_sum(x_exp,1,keep_dims=True)    # row-wise sums
+    # 转化元素为概率,每一行为一个分布
     out = tf.div(x_exp,sum_exp)                        # divide
     ### END YOUR CODE
 
@@ -60,7 +66,10 @@ def cross_entropy_loss(y, yhat):
 
     ### YOUR CODE HERE
     l_yhat = tf.log(yhat)                           # log yhat
+    # 逐元素相乘
     product = tf.multiply(tf.to_float(y), l_yhat)   # multiply element-wise
+    # reduce_sum 计算tensor所有元素的和
+    # negative 取负数
     out = tf.negative(tf.reduce_sum(product))       # negative summation to scalar
     ### END YOUR CODE
 
@@ -73,9 +82,11 @@ def test_softmax_basic():
     Warning: these are not exhaustive.
     """
 
+    # constant 常量tensor
     test1 = softmax(tf.constant(np.array([[1001, 1002], [3, 4]]), dtype=tf.float32))
     with tf.Session() as sess:
             test1 = sess.run(test1)
+    # 比对是否不同,与设置断点类似
     test_all_close("Softmax test 1", test1, np.array([[0.26894142,  0.73105858],
                                                       [0.26894142,  0.73105858]]))
 
@@ -84,7 +95,7 @@ def test_softmax_basic():
             test2 = sess.run(test2)
     test_all_close("Softmax test 2", test2, np.array([[0.73105858, 0.26894142]]))
 
-    print "Basic (non-exhaustive) softmax tests pass\n"
+    print("Basic (non-exhaustive) softmax tests pass\n")
 
 
 def test_cross_entropy_loss_basic():
@@ -103,7 +114,7 @@ def test_cross_entropy_loss_basic():
     expected = -3 * np.log(.5)
     test_all_close("Cross-entropy test 1", test1, expected)
 
-    print "Basic (non-exhaustive) cross-entropy tests pass"
+    print("Basic (non-exhaustive) cross-entropy tests pass")
 
 if __name__ == "__main__":
     test_softmax_basic()

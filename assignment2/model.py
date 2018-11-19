@@ -1,9 +1,13 @@
+# _*_ coding:utf8 _*_
+
 class Model(object):
     """Abstracts a Tensorflow graph for a learning task.
 
-    We use various Model classes as usual abstractions to encapsulate tensorflow
+    We use various Model classes as usual abstractions to encapsulate(封装) tensorflow
     computational graphs. Each algorithm you will construct in this homework will
     inherit from a Model object.
+    将学习任务的Tensorflow图操作定义为一个抽象类,通过继承这个类并实现抽象函数来个性化
+    不同的学习训练算法模型.
     """
 
     def add_placeholders(self):
@@ -106,7 +110,7 @@ class Model(object):
         return predictions
 
     def build(self):
-        self.add_placeholders()
-        self.pred = self.add_prediction_op()
-        self.loss = self.add_loss_op(self.pred)
-        self.train_op = self.add_training_op(self.loss)
+        self.add_placeholders() #声明占位符
+        self.pred = self.add_prediction_op() # 预测值图
+        self.loss = self.add_loss_op(self.pred) # 损失值图
+        self.train_op = self.add_training_op(self.loss) # 训练图

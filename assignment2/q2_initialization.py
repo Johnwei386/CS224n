@@ -1,3 +1,5 @@
+# _*_ coding:utf8 _*_
+
 import numpy as np
 import tensorflow as tf
 

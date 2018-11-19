@@ -1,10 +1,11 @@
 #!/usr/bin/env python
+# _*_ coding:utf8 _*_
 
 import argparse
 import numpy as np
 import matplotlib
 
-matplotlib.use('agg')
+matplotlib.use('agg') 
 import matplotlib.pyplot as plt
 import itertools
 
@@ -50,6 +51,7 @@ def getSentenceFeatures(tokens, wordVectors, sentence):
     sentVector = np.zeros((wordVectors.shape[1],))
 
     ### YOUR CODE HERE
+    # 计算句子向量,句子中所有词向量相加取平均
     for s in sentence:
         sentVector += wordVectors[tokens[s], :]
 
@@ -67,6 +69,7 @@ def getRegularizationValues():
     """
     values = None  # Assign a list of floats in the block below
     ### YOUR CODE HERE
+    # 构造100个正则化值,用于100次训练
     values = np.logspace(-4, 2, num=100, base=10)
     ### END YOUR CODE
     return sorted(values)
@@ -115,6 +118,7 @@ def plotRegVsAccuracy(regValues, results, filename):
 
 
 def outputConfusionMatrix(features, labels, clf, filename):
+    # 输出混淆矩阵,观测分类情况
     """ Generate a confusion matrix """
     pred = clf.predict(features)
     cm = confusion_matrix(labels, pred, labels=range(5))
@@ -156,9 +160,10 @@ def main(args):
 
     if args.yourvectors:
         _, wordVectors, _ = load_saved_params()
-        wordVectors = np.concatenate(
-            (wordVectors[:nWords, :], wordVectors[nWords:, :]),
-            axis=1)
+        # 将中心词向量和上下文词向量拼成一个词向量,用来表示这个词
+        wordVectors = np.concatenate((wordVectors[:nWords, :], 
+                                      wordVectors[nWords:, :]),
+                                      axis=1) 
     elif args.pretrained:
         wordVectors = glove.loadWordVectors(tokens)
     dimVectors = wordVectors.shape[1]
@@ -196,6 +201,9 @@ def main(args):
     for reg in regValues:
         print "Training for reg=%f" % reg
         # Note: add a very small number to regularization to please the library
+        # 参数C为正则化强度
+        # LogisticRegression可以实现多分类,构建m(m-1)/2个二分类器,m为需要分类的分类数
+        # 对于一个新样本,由每个分类器投票表决,将这个新样本分配给得票数最高的类
         clf = LogisticRegression(C=1.0 / (reg + 1e-12))
         clf.fit(trainFeatures, trainLabels)
 

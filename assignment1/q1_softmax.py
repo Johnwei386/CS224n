@@ -1,3 +1,4 @@
+# _*_ coding:utf8 _*_
 import numpy as np
 
 
@@ -33,7 +34,9 @@ def softmax(x):
         ### YOUR CODE HERE
         exp_minmax = lambda x: np.exp(x - np.max(x))
         denom = lambda x: 1.0 / np.sum(x)
+        # 逐元素按行处理每个元素,这里为,每行元素减去这一行最大的值然后求exp,最大值为0
         x = np.apply_along_axis(exp_minmax, 1, x)
+        # 求得矩阵每一行的和的倒数,输出一个1维向量
         denominator = np.apply_along_axis(denom, 1, x)
 
         if len(denominator.shape) == 1:
@@ -46,8 +49,10 @@ def softmax(x):
         ### YOUR CODE HERE
         x_max = np.max(x)
         x = x - x_max
+        # x中的每个元素皆取e的指数
         numerator = np.exp(x)
         denominator = 1.0 / np.sum(numerator)
+        # x.dot(n) = x * n,x为一个向量,n为一个常数.
         x = numerator.dot(denominator)
         ### END YOUR CODE
 
@@ -64,6 +69,7 @@ def test_softmax_basic():
     test1 = softmax(np.array([1, 2]))
     print test1
     ans1 = np.array([0.26894142, 0.73105858])
+    # allclose 元素对应相等,误差满足相对和绝对容错要求
     assert np.allclose(test1, ans1, rtol=1e-05, atol=1e-06)
 
     test2 = softmax(np.array([[1001, 1002], [3, 4]]))
@@ -96,4 +102,3 @@ def test_softmax():
 
 if __name__ == "__main__":
     test_softmax_basic()
-    test_softmax()

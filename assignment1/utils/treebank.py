@@ -18,7 +18,7 @@ class StanfordSentiment:
         if hasattr(self, "_tokens") and self._tokens:
             return self._tokens
 
-        tokens = dict()
+        tokens = dict() 
         tokenfreq = dict()
         wordcount = 0
         revtokens = []
@@ -40,10 +40,10 @@ class StanfordSentiment:
         tokenfreq["UNK"] = 1
         wordcount += 1
 
-        self._tokens = tokens
-        self._tokenfreq = tokenfreq
-        self._wordcount = wordcount
-        self._revtokens = revtokens
+        self._tokens = tokens # 词-索引
+        self._tokenfreq = tokenfreq # 词频统计
+        self._wordcount = wordcount # 独立词计数
+        self._revtokens = revtokens # 索引-词 
         return self._tokens
 
     def sentences(self):
@@ -63,8 +63,8 @@ class StanfordSentiment:
                 sentences += [[w.lower().decode("utf-8").encode('latin1') for w in splitted]]
 
         self._sentences = sentences
-        self._sentlengths = np.array([len(s) for s in sentences])
-        self._cumsentlen = np.cumsum(self._sentlengths)
+        self._sentlengths = np.array([len(s) for s in sentences]) # 统计每个句子的长度
+        self._cumsentlen = np.cumsum(self._sentlengths) # 统计文本大小
 
         return self._sentences
 
@@ -72,7 +72,7 @@ class StanfordSentiment:
         if hasattr(self, "_numSentences") and self._numSentences:
             return self._numSentences
         else:
-            self._numSentences = len(self.sentences())
+            self._numSentences = len(self.sentences()) # 统计文本句子个数
             return self._numSentences
 
     def allSentences(self):
@@ -82,6 +82,7 @@ class StanfordSentiment:
         sentences = self.sentences()
         rejectProb = self.rejectProb()
         tokens = self.tokens()
+        # 文本复制30份,在按词频统计重构句子
         allsentences = [[w for w in s
             if 0 >= rejectProb[tokens[w]] or random.random() >= rejectProb[tokens[w]]]
             for s in sentences * 30]
@@ -96,14 +97,16 @@ class StanfordSentiment:
         allsent = self.allSentences()
         sentID = random.randint(0, len(allsent) - 1)
         sent = allsent[sentID]
-        wordID = random.randint(0, len(sent) - 1)
+        wordID = random.randint(0, len(sent) - 1) # 随机选取中心词
 
-        context = sent[max(0, wordID - C):wordID]
+        # 构建中心词左边的上下文
+        context = sent[max(0, wordID - C):wordID] 
+        # 构建中心词右边的上下文
         if wordID+1 < len(sent):
             context += sent[wordID+1:min(len(sent), wordID + C + 1)]
 
-        centerword = sent[wordID]
-        context = [w for w in context if w != centerword]
+        centerword = sent[wordID] # 得到中心词
+        context = [w for w in context if w != centerword] # 构造中心词附近上下文,不包括中心词
 
         if len(context) > 0:
             return centerword, context
@@ -114,6 +117,7 @@ class StanfordSentiment:
         if hasattr(self, "_sent_labels") and self._sent_labels:
             return self._sent_labels
 
+        # 获取字典
         dictionary = dict()
         phrases = 0
         with open(self.path + "/dictionary.txt", "r") as f:
@@ -121,9 +125,10 @@ class StanfordSentiment:
                 line = line.strip()
                 if not line: continue
                 splitted = line.split("|")
-                dictionary[splitted[0].lower()] = int(splitted[1])
+                dictionary[splitted[0].lower()] = int(splitted[1]) # 句子-索引
                 phrases += 1
 
+        # 获取字典中每个句子对应的情感度值
         labels = [0.0] * phrases
         with open(self.path + "/sentiment_labels.txt", "r") as f:
             first = True
@@ -135,8 +140,9 @@ class StanfordSentiment:
                 line = line.strip()
                 if not line: continue
                 splitted = line.split("|")
-                labels[int(splitted[0])] = float(splitted[1])
+                labels[int(splitted[0])] = float(splitted[1]) # 索引-情感度标签值
 
+        # 得到每个句子具体的情感度标签值
         sent_labels = [0.0] * self.numSentences()
         sentences = self.sentences()
         for i in xrange(self.numSentences()):
@@ -148,6 +154,7 @@ class StanfordSentiment:
         return self._sent_labels
 
     def dataset_split(self):
+        # 切分数据集为3个部分
         if hasattr(self, "_split") and self._split:
             return self._split
 
@@ -160,6 +167,7 @@ class StanfordSentiment:
                     continue
 
                 splitted = line.strip().split(",")
+                # 训练集,测试集,验证集=0,1,2.索引从0开始
                 split[int(splitted[1]) - 1] += [int(splitted[0]) - 1]
 
         self._split = split
@@ -171,6 +179,7 @@ class StanfordSentiment:
         return self.sentences()[sentId], self.categorify(self.sent_labels()[sentId])
 
     def categorify(self, label):
+        # 5个不同的情感分类
         if label <= 0.2:
             return 0
         elif label <= 0.4:
@@ -183,12 +192,15 @@ class StanfordSentiment:
             return 4
 
     def getDevSentences(self):
+        # 验证集
         return self.getSplitSentences(2)
 
     def getTestSentences(self):
+        # 测试集
         return self.getSplitSentences(1)
 
     def getTrainSentences(self):
+        # 训练集
         return self.getSplitSentences(0)
 
     def getSplitSentences(self, split=0):
@@ -228,6 +240,7 @@ class StanfordSentiment:
         return self._sampleTable
 
     def rejectProb(self):
+        # 按阀值重构词频
         if hasattr(self, '_rejectProb') and self._rejectProb is not None:
             return self._rejectProb
 
@@ -239,6 +252,7 @@ class StanfordSentiment:
             w = self._revtokens[i]
             freq = 1.0 * self._tokenfreq[w]
             # Reweigh
+            # 给定一个阀值,词库中的词按出现频率, 频率比阀值小,置为0
             rejectProb[i] = max(0, 1 - np.sqrt(threshold / freq))
 
         self._rejectProb = rejectProb

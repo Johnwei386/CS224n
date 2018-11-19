@@ -122,3 +122,6 @@ assignment3/q3-clip-rnn.png
 assignment3/q3-noclip-gru.png
 assignment3/q3-noclip-rnn.png
 assignment3/results/
+
+lectures/
+lectures/*

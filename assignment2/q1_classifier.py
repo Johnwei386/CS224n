@@ -1,5 +1,6 @@
-import time
+# _*_ coding:utf8 _*_
 
+import time
 import numpy as np
 import tensorflow as tf
 
@@ -10,22 +11,24 @@ from utils.general_utils import get_minibatches
 
 
 class Config(object):
-    """Holds model hyperparams and data information.
+    """Holds model hyperparams and data information.保存所有超参数
 
     The config class is used to store various hyperparameters and dataset
     information parameters. Model objects are passed a Config() object at
     instantiation.
     """
-    n_samples = 1024
-    n_features = 100
-    n_classes = 5
-    batch_size = 64
-    n_epochs = 50
-    lr = 1e-4
+    n_samples = 1024 # 采样的数据样本数量
+    n_features = 100 # 特征维度
+    n_classes = 5 # 分类数量
+    batch_size = 64 # SGD批次大小
+    n_epochs = 50 # 进化迭代次数
+    lr = 1e-4 # 学习率
 
 
 class SoftmaxModel(Model):
-    """Implements a Softmax classifier with cross-entropy loss."""
+    """Implements a Softmax classifier with cross-entropy loss.
+       实现一个具体的学习训练模型,Softmax分类器
+    """
 
     def add_placeholders(self):
         """Generates placeholder variables to represent the input tensors.
@@ -45,8 +48,14 @@ class SoftmaxModel(Model):
             self.labels_placeholder
         """
         ### YOUR CODE HERE
-        self.input_placeholder = tf.placeholder(tf.float32, [self.config.batch_size, self.config.n_features])
-        self.labels_placeholder = tf.placeholder(tf.int32, [self.config.batch_size, self.config.n_classes])
+        # 输入占位符,[64x100]
+        self.input_placeholder = tf.placeholder(tf.float32, 
+                                                [self.config.batch_size,
+                                                 self.config.n_features])
+        # 分类标识占位,[64x5]
+        self.labels_placeholder = tf.placeholder(tf.int32, 
+                                                 [self.config.batch_size,
+                                                  self.config.n_classes])
         ### END YOUR CODE
 
     def create_feed_dict(self, inputs_batch, labels_batch=None):
@@ -70,7 +79,8 @@ class SoftmaxModel(Model):
             feed_dict: The feed dictionary mapping from placeholders to values.
         """
         ### YOUR CODE HERE
-        feed_dict = {self.input_placeholder: inputs_batch, self.labels_placeholder: labels_batch}
+        feed_dict = {self.input_placeholder: inputs_batch, 
+                     self.labels_placeholder: labels_batch}
         ### END YOUR CODE
         return feed_dict
 
@@ -92,8 +102,12 @@ class SoftmaxModel(Model):
         """
         ### YOUR CODE HERE
         with tf.variable_scope("transformation"):
+            # [1x5]
             bias = tf.Variable(tf.random_uniform([self.config.n_classes]))
-            W = tf.Variable(tf.random_uniform([self.config.n_features, self.config.n_classes]))
+            # [100x5]
+            W = tf.Variable(tf.random_uniform([self.config.n_features,
+                                               self.config.n_classes]))
+            # z= [64x100] .dot [100x5] = [64x5]
             z = tf.matmul(self.input_placeholder, W) + bias
         pred = softmax(z)
         ### END YOUR CODE
@@ -125,8 +139,8 @@ class SoftmaxModel(Model):
 
         for more information.
 
-        Hint: Use tf.train.GradientDescentOptimizer to get an optimizer object.
-                    Calling optimizer.minimize() will return a train_op object.
+        Hint: Use 1. tf.train.GradientDescentOptimizer to get an optimizer object.
+                  2. Calling optimizer.minimize() will return a train_op object.
 
         Args:
             loss: Loss tensor, from cross_entropy_loss.
@@ -149,6 +163,7 @@ class SoftmaxModel(Model):
             average_loss: scalar. Average minibatch loss of model on epoch.
         """
         n_minibatches, total_loss = 0, 0
+        # 将数据集按批次切分后,一个样本对应一个label,训练损失值
         for input_batch, labels_batch in get_minibatches([inputs, labels], self.config.batch_size):
             n_minibatches += 1
             total_loss += self.train_on_batch(sess, input_batch, labels_batch)
@@ -165,10 +180,12 @@ class SoftmaxModel(Model):
             losses: list of loss per epoch
         """
         losses = []
+        # 迭代进化
         for epoch in range(self.config.n_epochs):
             start_time = time.time()
             average_loss = self.run_epoch(sess, inputs, labels)
             duration = time.time() - start_time
+            # 格式化输出
             print 'Epoch {:}: loss = {:.2f} ({:.3f} sec)'.format(epoch, average_loss, duration)
             losses.append(average_loss)
         return losses
@@ -205,10 +222,14 @@ def test_softmax_model():
 
         # Create a session for running Ops in the Graph
         with tf.Session() as sess:
+            # Tensorboard 初始化日志保存路径
+            writer = tf.summary.FileWriter("./tblogs",sess.graph)
             # Run the Op to initialize the variables.
             sess.run(init)
             # Fit the model
             losses = model.fit(sess, inputs, labels)
+            
+        writer.close()
 
     # If Ops are implemented correctly, the average loss should fall close to zero
     # rapidly.

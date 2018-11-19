@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# _*_ coding:utf8 _*_
 
 # Save parameters every a few SGD iterations as fail-safe
 SAVE_PARAMS_EVERY = 5000

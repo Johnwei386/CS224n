@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# _*_ coding:utf8 _*_
 
 import random
 import numpy as np
@@ -28,10 +29,12 @@ random.seed(31415)
 np.random.seed(9265)
 
 startTime=time.time()
+# 从高斯分布中采样初始化词向量
 wordVectors = np.concatenate(
     ((np.random.rand(nWords, dimVectors) - 0.5) /
        dimVectors, np.zeros((nWords, dimVectors))),
     axis=0)
+# 训练词向量
 wordVectors = sgd(
     lambda vec: word2vec_sgd_wrapper(skipgram, tokens, vec, dataset, C,
         negSamplingCostAndGradient),
@@ -48,6 +51,7 @@ wordVectors = np.concatenate(
     axis=0)
 # wordVectors = wordVectors[:nWords,:] + wordVectors[nWords:,:]
 
+# 词向量按相似度,作聚类演示
 visualizeWords = [
     "the", "a", "an", ",", ".", "?", "!", "``", "''", "--",
     "good", "great", "cool", "brilliant", "wonderful", "well", "amazing",

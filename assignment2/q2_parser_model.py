@@ -1,3 +1,5 @@
+# _*_ coding:utf8 _*_
+
 import os
 import time
 import tensorflow as tf
@@ -5,7 +7,7 @@ import cPickle
 
 from model import Model
 from q2_initialization import xavier_weight_init
-from utils.general_utils import Progbar
+from utils.general_utils import Progbar # 进度条
 from utils.parser_utils import minibatches, load_and_preprocess_data
 
 
@@ -16,10 +18,10 @@ class Config(object):
     information parameters. Model objects are passed a Config() object at
     instantiation.
     """
-    n_features = 36
+    n_features = 36 # 状态向量F的维度
     n_classes = 3
     dropout = 0.5
-    embed_size = 50
+    embed_size = 50 # 预编码词向量的维度
     hidden_size = 200
     batch_size = 2048
     n_epochs = 10
@@ -117,7 +119,7 @@ class ParserModel(Model):
         return embeddings
 
     def add_prediction_op(self):
-        """Adds the 1-hidden-layer NN:
+        """Adds the 1-hidden-layer NN:一层网络前馈计算
             h = Relu(xW + b1)
             h_drop = Dropout(h, dropout_rate)
             pred = h_dropU + b2
@@ -153,14 +155,14 @@ class ParserModel(Model):
 
             z1 = tf.matmul(x,W) + b1
             h = tf.nn.relu(z1)
-            h_drop = tf.nn.dropout(h,self.dropout_placeholder)
+            h_drop = tf.nn.dropout(h,self.dropout_placeholder) # 隐藏层dropout操作
             pred = tf.matmul(h_drop, U) + b2
         ### END YOUR CODE
         return pred
 
     def add_loss_op(self, pred):
         """Adds Ops for the loss function to the computational graph.
-        In this case we are using cross entropy loss.
+        In this case we are using cross entropy loss.求损失值
         The loss should be averaged over all examples in the current minibatch.
 
         Hint: You can use tf.nn.softmax_cross_entropy_with_logits to simplify your
@@ -172,14 +174,15 @@ class ParserModel(Model):
             loss: A 0-d tensor (scalar)
         """
         ### YOUR CODE HERE
+        # 返回的不是一个均值,而是一个与label同形状的tensor
         loss = tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=self.labels_placeholder)
-        loss += self.beta_regul * tf.nn.l2_loss(self.W)
-        loss = tf.reduce_mean(loss)
+        loss += self.beta_regul * tf.nn.l2_loss(self.W) # 正则项
+        loss = tf.reduce_mean(loss) # 求平均
         ### END YOUR CODE
         return loss
 
     def add_training_op(self, loss):
-        """Sets up the training Ops.
+        """Sets up the training Ops.定义优化器,求解参数
 
         Creates an optimizer and applies the gradients to all trainable variables.
         The Op returned by this function is what must be passed to the
@@ -198,6 +201,7 @@ class ParserModel(Model):
             train_op: The Op for training.
         """
         ### YOUR CODE HERE
+        # 使用adam优化器
         adam_optim = tf.train.AdamOptimizer(self.config.lr)
         train_op = adam_optim.minimize(loss)
         ### END YOUR CODE
@@ -284,6 +288,7 @@ def main(debug=True):
                 print "Done!"
 
 if __name__ == '__main__':
-    main(False)
+    main(debug=True)
+    #main(debug=False)
 
 

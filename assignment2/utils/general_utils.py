@@ -1,3 +1,5 @@
+# _*_ coding:utf8 _*_
+
 import sys
 import time
 import numpy as np
@@ -25,18 +27,19 @@ def get_minibatches(data, minibatch_size, shuffle=True):
     Returns:
         minibatches: the return value depends on data:
             - If data is a list/array it yields the next minibatch of data.
-            - If data a list of lists/arrays it returns the next minibatch of each element in the
-              list. This can be used to iterate through multiple data sources
-              (e.g., features and labels) at the same time.
+            - If data a list of lists/arrays it returns the next minibatch of each 
+              element in the list. This can be used to iterate through multiple data 
+              sources (e.g., features and labels) at the same time.
 
     """
     list_data = type(data) is list and (type(data[0]) is list or type(data[0]) is np.ndarray)
     data_size = len(data[0]) if list_data else len(data)
     indices = np.arange(data_size)
     if shuffle:
-        np.random.shuffle(indices)
+        np.random.shuffle(indices) 
     for minibatch_start in np.arange(0, data_size, minibatch_size):
         minibatch_indices = indices[minibatch_start:minibatch_start + minibatch_size]
+        # 产生一个可迭代的对象并返回
         yield [minibatch(d, minibatch_indices) for d in data] if list_data \
             else minibatch(data, minibatch_indices)
 
@@ -46,10 +49,13 @@ def minibatch(data, minibatch_idx):
 
 
 def test_all_close(name, actual, expected):
+    # 测试实际tensor和期望值的差异,是否不同
     if actual.shape != expected.shape:
+        # 形状不同
         raise ValueError("{:} failed, expected output to have shape {:} but has shape {:}"
                          .format(name, expected.shape, actual.shape))
     if np.amax(np.fabs(actual - expected)) > 1e-6:
+        # 值差异不满足精度约束
         raise ValueError("{:} failed, expected {:} but value is {:}".format(name, expected, actual))
     else:
         print name, "passed!"
@@ -59,11 +65,11 @@ def logged_loop(iterable, n=None):
     if n is None:
         n = len(iterable)
     step = max(1, n / 1000)
-    prog = Progbar(n)
+    prog = Progbar(n) # 生成进度条
     for i, elem in enumerate(iterable):
         if i % step == 0 or i == n - 1:
             prog.update(i + 1)
-        yield elem
+        yield elem # 返回一个可迭代的句子集合,即将源数据对象转化为一个可迭代的生成器
 
 
 class Progbar(object):
