@@ -89,8 +89,8 @@ class SequencePredictor(Model):
 
         x = self.inputs_placeholder
         ### YOUR CODE HERE (~2-3 lines)
-        preds = tf.nn.dynamic_rnn(cell, x, dtype=tf.float32)[1]
-        preds = tf.sigmoid(preds)
+        preds = tf.nn.dynamic_rnn(cell, x, dtype=tf.float32)[1] # 得到最终的状态,(N,H)
+        preds = tf.sigmoid(preds) # 映射值到[0,1],H=1,preds=[N]
         ### END YOUR CODE
 
         return preds  # state # preds
@@ -112,7 +112,7 @@ class SequencePredictor(Model):
         y = self.labels_placeholder
 
         ### YOUR CODE HERE (~1-2 lines)
-        loss = tf.nn.l2_loss(preds - y)
+        loss = tf.nn.l2_loss(preds - y) # L2范数
         loss = tf.reduce_mean(loss)
         ### END YOUR CODE
 
@@ -148,17 +148,17 @@ class SequencePredictor(Model):
         # - Remember to clip gradients only if self.config.clip_gradients
         # is True.
         # - Remember to set self.grad_norm
-        grads_and_vars = optimizer.compute_gradients(loss)
-        variables = [output[1] for output in grads_and_vars]
-        gradients = [output[0] for output in grads_and_vars]
+        grads_and_vars = optimizer.compute_gradients(loss) # 优化器minimize()的第1步
+        variables = [output[1] for output in grads_and_vars] # 得到参数变量
+        gradients = [output[0] for output in grads_and_vars] # 得到梯度
         if self.config.clip_gradients:
-            tmp_gradients = tf.clip_by_global_norm(gradients, clip_norm=self.config.max_grad_norm)[0]
+            tmp_gradients = tf.clip_by_global_norm(gradients, clip_norm=self.config.max_grad_norm)[0] # 返回缩放后的梯度
             gradients = tmp_gradients
 
         grads_and_vars = [(gradients[i], variables[i]) for i in range(len(gradients))]
-        self.grad_norm = tf.global_norm(gradients)
+        self.grad_norm = tf.global_norm(gradients) # 计算梯度所有元素的范数
 
-        train_op = optimizer.apply_gradients(grads_and_vars)
+        train_op = optimizer.apply_gradients(grads_and_vars) # 应用缩放后的梯度,优化器minimize()的第2步
         ### END YOUR CODE
 
         assert self.grad_norm is not None, "grad_norm was not set properly!"
@@ -254,6 +254,7 @@ def compute_cell_dynamics(args):
             h_placeholder = tf.placeholder(tf.float32, shape=(None, 1))
 
             def mat(x):
+                # View inputs as arrays with at least two dimensions.
                 return np.atleast_2d(np.array(x, dtype=np.float32))
 
             def vec(x):

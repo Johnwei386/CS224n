@@ -109,10 +109,11 @@ def load_word_vector_mapping(vocab_fstream, vector_fstream):
     Assumes each line of the vocab file matches with those of the vector
     file.
     """
-    ret = OrderedDict()
+    ret = OrderedDict() # 有序字典,双向链表
     for vocab, vector in zip(vocab_fstream, vector_fstream):
         vocab = vocab.strip()
         vector = vector.strip()
+        # 词向量每一个元素转化为float格式
         ret[vocab] = array(list(map(float, vector.split())))
 
     return ret
@@ -147,12 +148,14 @@ def window_iterator(seq, n=1, beg="<s>", end="</s>"):
     for i in range(len(seq)):
         l = max(0, i-n)
         r = min(len(seq), i+n+1)
-        ret = seq[l:r]
+        ret = seq[l:r] # 一个窗口大小的词
         if i < n:
+            # 句子第一个单词,左边添加start标签
             ret = [beg,] * (n-i) + ret
         if i+n+1 > len(seq):
+            # 句子最后一个单词,右边添加end标签
             ret = ret + [end,] * (i+n+1 - len(seq))
-        yield ret
+        yield ret # 返回这个单词所在的窗口
 
 def test_window_iterator():
     assert list(window_iterator(list("abcd"), n=0)) == [["a",], ["b",], ["c",], ["d"]]
@@ -205,10 +208,12 @@ class ConfusionMatrix(object):
     def __init__(self, labels, default_label=None):
         self.labels = labels
         self.default_label = default_label if default_label is not None else len(labels) -1
-        self.counts = defaultdict(Counter)
+        self.counts = defaultdict(Counter) # 字典里的每一个对象皆是一个Counter类对象
 
     def update(self, gold, guess):
         """Update counts"""
+        # 构建共现矩阵
+        # defaultdict(<class 'collections.Counter'>, {4: Counter({1: 3, 2: 3}), 6: Counter({1: 4})})
         self.counts[gold][guess] += 1
 
     def as_table(self):
@@ -410,6 +415,8 @@ def minibatch(data, minibatch_idx):
     return data[minibatch_idx] if type(data) is np.ndarray else [data[i] for i in minibatch_idx]
 
 def minibatches(data, batch_size, shuffle=True):
+    # [([w1,w2,w3], 1), ([w2,w3,w4], 4)] => [array(words window),array(label)]
+    # batches[0].shape = (9166,6), batches[1].shape = (9166,)
     batches = [np.array(col) for col in zip(*data)]
     return get_minibatches(batches, batch_size, shuffle)
 

@@ -38,10 +38,10 @@ class GRUCell(tf.nn.rnn_cell.RNNCell):
         """Updates the state using the previous @state and @inputs.
         Remember the GRU equations are:
 
-        z_t = sigmoid(x_t U_z + h_{t-1} W_z + b_z)
-        r_t = sigmoid(x_t U_r + h_{t-1} W_r + b_r)
-        o_t = tanh(x_t U_o + r_t * h_{t-1} W_o + b_o)
-        h_t = z_t * h_{t-1} + (1 - z_t) * o_t
+        z_t = sigmoid(x_t U_z + h_{t-1} W_z + b_z)      更新门
+        r_t = sigmoid(x_t U_r + h_{t-1} W_r + b_r)      重置门
+        o_t = tanh(x_t U_o + r_t * h_{t-1} W_o + b_o)   新记忆
+        h_t = z_t * h_{t-1} + (1 - z_t) * o_t           隐藏层
 
         TODO: In the code below, implement an GRU cell using @inputs
         (x_t above) and the state (h_{t-1} above).
@@ -66,15 +66,15 @@ class GRUCell(tf.nn.rnn_cell.RNNCell):
         with tf.variable_scope(scope):
             ### YOUR CODE HERE (~20-30 lines)
             initFunc = tf.contrib.layers.xavier_initializer(uniform=True) # set to False for gradient clipping
-            W_r = tf.get_variable('W_r', [self.state_size, self.state_size], initializer=initFunc, dtype = tf.float32)
-            U_r = tf.get_variable('U_r', [self.input_size, self.state_size], initializer=initFunc, dtype = tf.float32)
-            b_r = tf.get_variable('b_r', [self.state_size,], initializer=tf.constant_initializer(0), dtype = tf.float32)
-            W_z = tf.get_variable('W_z', [self.state_size, self.state_size], initializer=initFunc, dtype = tf.float32)
-            U_z = tf.get_variable('U_z', [self.input_size, self.state_size], initializer=initFunc, dtype = tf.float32)
+            W_r = tf.get_variable('W_r', [self.state_size, self.state_size], initializer=initFunc, dtype = tf.float32) # HxH
+            U_r = tf.get_variable('U_r', [self.input_size, self.state_size], initializer=initFunc, dtype = tf.float32) # DxH
+            b_r = tf.get_variable('b_r', [self.state_size,], initializer=tf.constant_initializer(0), dtype = tf.float32) # H
+            W_z = tf.get_variable('W_z', [self.state_size, self.state_size], initializer=initFunc, dtype = tf.float32) # HxH
+            U_z = tf.get_variable('U_z', [self.input_size, self.state_size], initializer=initFunc, dtype = tf.float32) # DxH
             b_z = tf.get_variable('b_z', [self.state_size,], initializer=tf.constant_initializer(0), dtype = tf.float32)    ## Recommend on Piazza
-            W_o = tf.get_variable('W_o', [self.state_size, self.state_size], initializer=initFunc, dtype = tf.float32)
-            U_o = tf.get_variable('U_o', [self.input_size, self.state_size], initializer=initFunc, dtype = tf.float32)
-            b_o = tf.get_variable('b_o', [self.state_size,], initializer=tf.constant_initializer(0), dtype = tf.float32)
+            W_o = tf.get_variable('W_o', [self.state_size, self.state_size], initializer=initFunc, dtype = tf.float32) # HxH
+            U_o = tf.get_variable('U_o', [self.input_size, self.state_size], initializer=initFunc, dtype = tf.float32) # DxH
+            b_o = tf.get_variable('b_o', [self.state_size,], initializer=tf.constant_initializer(0), dtype = tf.float32) # H
 
             z_t = tf.sigmoid(tf.matmul(inputs, U_z) + tf.matmul(state, W_z) + b_z)
             r_t = tf.sigmoid(tf.matmul(inputs, U_r) + tf.matmul(state, W_r) + b_r)

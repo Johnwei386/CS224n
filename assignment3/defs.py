@@ -18,4 +18,4 @@ LMAP = {k: one_hot(5,i) for i, k in enumerate(LBLS)}
 NUM = "NNNUMMM"
 UNK = "UUUNKKK"
 
-EMBED_SIZE = 50
+EMBED_SIZE = 50 # 词编码向量的维度

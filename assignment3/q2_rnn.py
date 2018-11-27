@@ -41,7 +41,7 @@ class Config:
     n_classes = 5
     dropout = 0.5
     embed_size = 50
-    hidden_size = 300
+    hidden_size = 300 # 隐藏层大小
     batch_size = 32
     n_epochs = 10
     max_grad_norm = 10.
@@ -68,7 +68,7 @@ def pad_sequences(data, max_length):
     TODO: In the code below, for every sentence, labels pair in @data,
     (a) create a new sentence which appends zero feature vectors until
     the sentence is of length @max_length. If the sentence is longer
-    than @max_length, simply truncate the sentence to be @max_length
+    than @max_length, simply truncate(截短) the sentence to be @max_length
     long.
     (b) create a new label sequence similarly.
     (c) create a _masking_ sequence that has a True wherever there was a
@@ -154,11 +154,11 @@ class RNNModel(NERModel):
         """
         ### YOUR CODE HERE (~4-6 lines)
         self.input_placeholder = tf.placeholder(
-            tf.int32, shape = (None, self.max_length, Config.n_features), name = 'input')
+            tf.int32, shape = (None, self.max_length, Config.n_features), name = 'input') # [NxMxD]
         self.labels_placeholder = tf.placeholder(
-            tf.int32, shape = (None, self.max_length), name = 'labels')
+            tf.int32, shape = (None, self.max_length), name = 'labels') # [NxM]
         self.mask_placeholder = tf.placeholder(
-            tf.bool, shape = (None, self.max_length), name = 'mask')
+            tf.bool, shape = (None, self.max_length), name = 'mask') # [NxM]
         self.dropout_placeholder = tf.placeholder(
             tf.float32, name = 'dropout')
         ### END YOUR CODE
@@ -265,7 +265,7 @@ class RNNModel(NERModel):
             pred: tf.Tensor of shape (batch_size, max_length, n_classes)
         """
 
-        x = self.add_embedding()
+        x = self.add_embedding() # 一条数据为一个句子
         dropout_rate = self.dropout_placeholder
 
         preds = [] # Predicted output at each timestep should go here!
@@ -288,23 +288,23 @@ class RNNModel(NERModel):
             b2 = tf.get_variable('b2', (Config.n_classes), initializer=tf.constant_initializer(0) )
 
         input_shape = tf.shape(x)
-        state = tf.zeros( (input_shape[0], Config.hidden_size) )
+        state = tf.zeros( (input_shape[0], Config.hidden_size) ) # h0 = [NxH]
         ### END YOUR CODE
 
         with tf.variable_scope("RNN"):
             for time_step in range(self.max_length):
                 ### YOUR CODE HERE (~6-10 lines)
                 if time_step>0:
-                    tf.get_variable_scope().reuse_variables()
-                o, state = cell( x[:,time_step, :], state, scope="RNN" )
-                o_drop = tf.nn.dropout(o, dropout_rate)
-                output = tf.matmul(o_drop,U) + b2
+                    tf.get_variable_scope().reuse_variables() # 变量重用
+                o, state = cell( x[:,time_step, :], state, scope="RNN" ) # 计算当前位置的词,更新当前t步的隐状态h
+                o_drop = tf.nn.dropout(o, dropout_rate) # [NxH],N为样本数量,句子的数目
+                output = tf.matmul(o_drop,U) + b2 # [NxC],每个句子的每个单词对应每个实体的分数
                 preds.append(output)
                 ### END YOUR CODE
 
         # Make sure to reshape @preds here.
         ### YOUR CODE HERE (~2-4 lines)
-        preds = tf.stack(preds, axis=1)
+        preds = tf.stack(preds, axis=1) # [NxMxC],M:句子最大长度,每个句子每一单词的实体预测值
         ### END YOUR CODE
 
         assert preds.get_shape().as_list() == [None, self.max_length, self.config.n_classes], "predictions are not of the right shape. Expected {}, got {}".format([None, self.max_length, self.config.n_classes], preds.get_shape().as_list())
@@ -326,8 +326,13 @@ class RNNModel(NERModel):
             loss: A 0-d tensor (scalar)
         """
         ### YOUR CODE HERE (~2-4 lines)
+        # 过滤mask为False的padding项
+        # mask:(N,M) preds:(N,M,C) masked_logits:(Wc,C) Wc为所有句子中不为0(padding)的单词总数
         masked_logits = tf.boolean_mask( preds, self.mask_placeholder)
+        # label:[N] masked_labels:[Wc] Wc为所有句子中不为0的单词总数
         masked_labels = tf.boolean_mask( self.labels_placeholder, self.mask_placeholder)
+
+        # 按单词计算损失,sparse_softmax返回的是一个大小为[Wc]的矢量,然后对这个矢量求平均,即是最终的梯度
         loss = tf.reduce_mean(
             tf.nn.sparse_softmax_cross_entropy_with_logits( logits = masked_logits,
                                                             labels = masked_labels )
@@ -355,20 +360,21 @@ class RNNModel(NERModel):
             train_op: The Op for training.
         """
         ### YOUR CODE HERE (~1-2 lines)
-        train_op = tf.train.AdamOptimizer(Config.lr).minimize(loss)
+        train_op = tf.train.AdamOptimizer(Config.lr).minimize(loss) # 自动更新梯度
         ### END YOUR CODE
         return train_op
 
     def preprocess_sequence_data(self, examples):
         def featurize_windows(data, start, end, window_size = 1):
             """Uses the input sequences in @data to construct new windowed data points.
+               按单词生成窗口
             """
             ret = []
             for sentence, labels in data:
                 from util import window_iterator
                 sentence_ = []
                 for window in window_iterator(sentence, window_size, beg=start, end=end):
-                    sentence_.append(sum(window, []))
+                    sentence_.append(sum(window, [])) # [[2]x3] -> [1x6]
                 ret.append((sentence_, labels))
             return ret
 
@@ -390,12 +396,15 @@ class RNNModel(NERModel):
         return ret
 
     def predict_on_batch(self, sess, inputs_batch, mask_batch):
-        feed = self.create_feed_dict(inputs_batch=inputs_batch, mask_batch=mask_batch)
+        feed = self.create_feed_dict(inputs_batch=inputs_batch,
+                                     mask_batch=mask_batch)
         predictions = sess.run(tf.argmax(self.pred, axis=2), feed_dict=feed)
         return predictions
 
     def train_on_batch(self, sess, inputs_batch, labels_batch, mask_batch):
-        feed = self.create_feed_dict(inputs_batch, labels_batch=labels_batch, mask_batch=mask_batch,
+        feed = self.create_feed_dict(inputs_batch=inputs_batch,
+                                     labels_batch=labels_batch,
+                                     mask_batch=mask_batch,
                                      dropout=Config.dropout)
         _, loss = sess.run([self.train_op, self.loss], feed_dict=feed)
         return loss
@@ -451,7 +460,7 @@ def do_test2(args):
         logger.info("took %.2f seconds", time.time() - start)
 
         init = tf.global_variables_initializer()
-        saver = None
+        saver = None # 不保存获得最好的结果时,模型的参数
 
         with tf.Session() as session:
             session.run(init)
@@ -468,7 +477,7 @@ def do_train(args):
     config.embed_size = embeddings.shape[1]
     helper.save(config.output_path)
 
-    handler = logging.FileHandler(config.log_output)
+    handler = logging.FileHandler(config.log_output) # 保存日志
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s: %(message)s'))
     logging.getLogger().addHandler(handler)
@@ -501,7 +510,7 @@ def do_train(args):
                     write_conll(f, output)
                 with open(model.config.eval_output, 'w') as f:
                     for sentence, labels, predictions in output:
-                        print_sentence(f, sentence, labels, predictions)
+                        print_sentence(f, sentence, labels, predictions) # 按格式输出
 
 def do_evaluate(args):
     config = Config(args)

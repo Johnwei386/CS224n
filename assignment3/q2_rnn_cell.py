@@ -28,7 +28,7 @@ class RNNCell(tf.nn.rnn_cell.RNNCell):
         self.input_size = input_size
         self._state_size = state_size
 
-    @property
+    @property # 只读属性
     def state_size(self):
         return self._state_size
 
@@ -58,7 +58,7 @@ class RNNCell(tf.nn.rnn_cell.RNNCell):
         Returns:
             a pair of the output vector and the new state vector.
         """
-        scope = scope or type(self).__name__
+        scope = scope or type(self).__name__ # 类名
 
         # It's always a good idea to scope variables in functions lest they
         # be defined elsewhere!
@@ -71,7 +71,7 @@ class RNNCell(tf.nn.rnn_cell.RNNCell):
             b = tf.get_variable('b', shape=(self._state_size), dtype=tf.float32,
                                 initializer=tf.contrib.layers.xavier_initializer())
 
-            new_state = tf.nn.sigmoid(tf.matmul(state, W_h) + tf.matmul(inputs, W_x) + b)
+            new_state = tf.nn.sigmoid(tf.matmul(state, W_h) + tf.matmul(inputs, W_x) + b) # 计算隐藏层
             ### END YOUR CODE ###
         # For an RNN , the output and state are the same (N.B. this
         # isn't true for an LSTM, though we aren't using one of those in
@@ -91,13 +91,14 @@ def test_rnn_cell():
                 tf.get_variable("W_h", initializer=np.array(np.eye(2, 2), dtype=np.float32))
                 tf.get_variable("b", initializer=np.array(np.ones(2), dtype=np.float32))
 
-            tf.get_variable_scope().reuse_variables()
+            tf.get_variable_scope().reuse_variables() # 变量重用
             cell = RNNCell(3, 2)
             y_var, ht_var = cell(x_placeholder, h_placeholder, scope="rnn")
 
             init = tf.global_variables_initializer()
             with tf.Session() as session:
                 session.run(init)
+                # 传入两组值,分别计算
                 x = np.array([
                     [0.4, 0.5, 0.6],
                     [0.3, -0.2, -0.1]], dtype=np.float32)

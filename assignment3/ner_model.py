@@ -62,7 +62,9 @@ class NERModel(Model):
         for _, labels, labels_  in self.output(sess, examples_raw, examples):
             for l, l_ in zip(labels, labels_):
                 token_cm.update(l, l_)
-            gold = set(get_chunks(labels))
+            # [(0, 4, 5), ... ,(0, 6, 7)]
+            # 连续的逐词的命名实体相同的为一个块,因为一组词才表示一个实体
+            gold = set(get_chunks(labels)) 
             pred = set(get_chunks(labels_))
             correct_preds += len(gold.intersection(pred))
             total_preds += len(pred)
@@ -70,14 +72,15 @@ class NERModel(Model):
 
         p = correct_preds / total_preds if correct_preds > 0 else 0
         r = correct_preds / total_correct if correct_preds > 0 else 0
-        f1 = 2 * p * r / (p + r) if correct_preds > 0 else 0
+        f1 = 2 * p * r / (p + r) if correct_preds > 0 else 0 # 计算f1分数
         return token_cm, (p, r, f1)
 
 
     def run_epoch(self, sess, train_examples, dev_set, train_examples_raw, dev_set_raw):
         prog = Progbar(target=1 + int(len(train_examples) / self.config.batch_size))
+        # batch = [[words window],[label]]
         for i, batch in enumerate(minibatches(train_examples, self.config.batch_size)):
-            loss = self.train_on_batch(sess, *batch)
+            loss = self.train_on_batch(sess, *batch) # 训练
             prog.update(i + 1, [("train loss", loss)])
             if self.report: self.report.log_train_loss(loss)
         print("")
@@ -89,17 +92,18 @@ class NERModel(Model):
         #logger.info("Entity level P/R/F1: %.2f/%.2f/%.2f", *entity_scores)
 
         logger.info("Evaluating on development data")
-        token_cm, entity_scores = self.evaluate(sess, dev_set, dev_set_raw)
+        token_cm, entity_scores = self.evaluate(sess, dev_set, dev_set_raw) # 训练后执行评估过程
         logger.debug("Token-level confusion matrix:\n" + token_cm.as_table())
         logger.debug("Token-level scores:\n" + token_cm.summary())
         logger.info("Entity level P/R/F1: %.2f/%.2f/%.2f", *entity_scores)
 
-        f1 = entity_scores[-1]
+        f1 = entity_scores[-1] # f1分数
         return f1
 
     def output(self, sess, inputs_raw, inputs=None):
         """
         Reports the output of the model on examples (uses helper to featurize each example).
+        生成模型的按批次预测的实体识别的分数结果,将结果按句子分组,加上真实的类别结果,返回给评估过程.
         """
         if inputs is None:
             inputs = self.preprocess_sequence_data(self.helper.vectorize(inputs_raw))
@@ -108,8 +112,9 @@ class NERModel(Model):
         prog = Progbar(target=1 + int(len(inputs) / self.config.batch_size))
         for i, batch in enumerate(minibatches(inputs, self.config.batch_size, shuffle=False)):
             # Ignore predict
-            batch = batch[:1] + batch[2:]
-            preds_ = self.predict_on_batch(sess, *batch)
+            # 忽略窗口正确的类标签列,只要窗口数据
+            batch = batch[:1] + batch[2:] # [2048x6]
+            preds_ = self.predict_on_batch(sess, *batch) # 2048
             preds += list(preds_)
             prog.update(i + 1, [])
         return self.consolidate_predictions(inputs_raw, inputs, preds)
@@ -126,7 +131,8 @@ class NERModel(Model):
             if score > best_score:
                 best_score = score
                 if saver:
-                    logger.info("New best score! Saving model in %s", self.config.model_output)
+                    logger.info("New best score! Saving model in %s",
+                                self.config.model_output)
                     saver.save(sess, self.config.model_output)
             print("")
             if self.report:
