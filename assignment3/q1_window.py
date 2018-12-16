@@ -22,7 +22,7 @@ from defs import LBLS
 
 # from report import Report
 
-logger = logging.getLogger("hw3.q1")
+logger = logging.getLogger("hw3.q1") # 创建日志记录器
 logger.setLevel(logging.DEBUG)
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 

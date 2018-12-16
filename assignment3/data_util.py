@@ -91,13 +91,14 @@ class ModelHelper(object):
     def build(cls, data):
         # Preprocess data to construct an embedding
         # Reserve 0 for the special NIL token. 构建标识-索引表
-        # data中所有的词转换为小写,按词频排序,返回词频最高的前max_words个{单词:词频}的序号
-        # 返回:{'sloga': 1070, ... ,'suicidal': 1071},tok2id的索引从1开始
+        # data中所有的词转换为小写,按词频排序
+        # 返回:{'sloga': 40, ... ,'suicidal': 1071}
         tok2id = build_dict((normalize(word) for sentence, _ in data for word in sentence), offset=1, max_words=10000)
         # 将大小写类型标识追加到tok2id表的后面
         tok2id.update(build_dict([P_CASE + c for c in CASES], offset=len(tok2id)))
         # 将start,end,unk标识追加到tok2id表的后面
         tok2id.update(build_dict([START_TOKEN, END_TOKEN, UNK], offset=len(tok2id)))
+        # tok2id 的索引从1开始
         assert sorted(tok2id.items(), key=lambda t: t[1])[0][1] == 1
         logger.info("Built dictionary for %d features.", len(tok2id))
 
@@ -163,7 +164,7 @@ def build_dict(words, max_words=None, offset=0):
 
 
 def get_chunks(seq, default=LBLS.index(NONE)):
-    """Breaks input of 4 4 4 0 0 4 0 ->   (0, 4, 5), (0, 6, 7) 从1开始索引"""
+    """Breaks input of 4 4 4 0 0 4 0 ->   (0, 4, 5), (0, 6, 7)"""
     chunks = []
     chunk_type, chunk_start = None, None
     for i, tok in enumerate(seq):
